@@ -105,3 +105,11 @@ class AccessDenied(JsonApiException):
 
     title = 'Access denied'
     status = '403'
+
+
+class DataConflict(JsonApiException):
+    """Error to identify requests causing integrity errors"""
+
+    title = 'Data conflict'
+    status = '409'
+
