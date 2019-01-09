@@ -5,8 +5,7 @@
 import inspect
 from six import with_metaclass
 
-from werkzeug.wrappers import Response
-from flask import request, url_for, make_response, current_app, jsonify
+from flask import request, Response, url_for, make_response, current_app, jsonify
 from flask.views import MethodView, MethodViewType
 from marshmallow_jsonapi.exceptions import IncorrectTypeError
 from marshmallow import ValidationError

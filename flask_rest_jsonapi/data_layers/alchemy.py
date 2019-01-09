@@ -3,6 +3,7 @@
 """This module is a CRUD interface between resource managers and the sqlalchemy ORM"""
 
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.collections import InstrumentedList
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import joinedload
@@ -12,7 +13,7 @@ from marshmallow.base import SchemaABC
 from flask import current_app
 from flask_rest_jsonapi.data_layers.base import BaseDataLayer
 from flask_rest_jsonapi.exceptions import RelationNotFound, RelatedObjectNotFound, JsonApiException,\
-    InvalidSort, ObjectNotFound, InvalidInclude
+    InvalidSort, ObjectNotFound, InvalidInclude, DataConflict
 from flask_rest_jsonapi.data_layers.filtering.alchemy import create_filters
 from flask_rest_jsonapi.schema import get_model_field, get_related_schema, get_relationships, get_schema_field
 
@@ -51,6 +52,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
         self.session.add(obj)
         try:
             self.session.commit()
+        except IntegrityError as e:
+            self.session.rollback()
+            raise DataConflict("Cannot create object: %s" % (str(e._message()).replace("\n",' '),) )
         except Exception as e:
             self.session.rollback()
             raise JsonApiException("Object creation error: " + str(e), source={'pointer': '/data'})
@@ -145,6 +149,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         try:
             self.session.commit()
+        except IntegrityError as e:
+            self.session.rollback()
+            raise DataConflict("Update object error: %s" % (str(e._message()).replace("\n",' '),) )
         except Exception as e:
             self.session.rollback()
             raise JsonApiException("Update object error: " + str(e), source={'pointer': '/data'})
@@ -222,6 +229,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         try:
             self.session.commit()
+        except IntegrityError as e:
+            self.session.rollback()
+            raise DataConflict("Create relationship error: Data Conflict")
         except Exception as e:
             self.session.rollback()
             raise JsonApiException("Create relationship error: " + str(e))
@@ -318,6 +328,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         try:
             self.session.commit()
+        except Integrity as e:
+            self.session.rollback()
+            raise DataConflict("Update relationship error: Data conflict")
         except Exception as e:
             self.session.rollback()
             raise JsonApiException("Update relationship error: " + str(e))
