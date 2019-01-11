@@ -412,6 +412,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param DeclarativeMeta obj: the sqlalchemy object to plug relationships to
         :return boolean: True if relationship have changed else False
         """
+        self.before_apply_relationships(data,obj)
+
         relationships_to_apply = []
         relationship_fields = get_relationships(self.resource.schema, model_field=True)
         for key, value in data.items():
@@ -438,6 +440,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         for relationship in relationships_to_apply:
             setattr(obj, relationship['field'], relationship['value'])
+
+        self.after_apply_relationships(data,obj,relationships_to_apply)
 
     def filter_query(self, query, filter_info, model):
         """Filter query according to jsonapi 1.0
@@ -626,6 +630,12 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param obj: an object from data layer
         :param dict view_kwargs: kwargs from the resource view
         """
+        pass
+
+    def before_apply_relationships(self,data,obj):
+        pass
+
+    def after_apply_relationships(self,data,obj,applied_relationships):
         pass
 
     def before_create_relationship(self, json_data, relationship_field, related_id_field, view_kwargs):

@@ -21,6 +21,8 @@ class BaseDataLayer(object):
                           'after_delete_object',
                           'before_create_relationship',
                           'after_create_relationship',
+                          'before_apply_relationships',
+                          'after_apply_relationships',
                           'before_get_relationship',
                           'after_get_relationship',
                           'before_update_relationship',
@@ -217,6 +219,25 @@ class BaseDataLayer(object):
 
         :param obj: an object from data layer
         :param dict view_kwargs: kwargs from the resource view
+        """
+        raise NotImplementedError
+
+    def before_apply_relationships(self, data, obj):
+        """Make work before the relationships are applied
+
+        :param dict data: the schema data
+        :param obj: created or updated data layer object
+        :return boolean: True if data changed else False
+        """
+        raise NotImplementedError
+
+    def after_apply_relationships(self, data, obj, applied_relationships):
+        """Make work before the relationships are applied
+
+        :param dict data: the schema data
+        :param obj: created or updated data layer object
+        :param dict applied_relationship: The relationships applied to the obj
+        :return boolean: True if data changed else False
         """
         raise NotImplementedError
 
