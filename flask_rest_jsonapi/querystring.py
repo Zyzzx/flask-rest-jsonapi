@@ -9,6 +9,7 @@ from flask import current_app
 from flask_rest_jsonapi.exceptions import BadRequest, InvalidFilters, InvalidSort, InvalidField, InvalidInclude
 from flask_rest_jsonapi.schema import get_model_field, get_relationships, get_schema_from_type
 
+import fiql_parser
 
 class QueryStringManager(object):
     """Querystring parser according to jsonapi reference"""
@@ -16,6 +17,8 @@ class QueryStringManager(object):
     MANAGED_KEYS = (
         'filter',
         'page',
+        'page_number',
+        'page_size',
         'fields',
         'sort',
         'include',
@@ -71,13 +74,15 @@ class QueryStringManager(object):
     @property
     def filters(self):
         """Return filters from query string.
-
+           TODO: Make plugable
         :return list: filter information
         """
         filters = self.qs.get('filter')
         if filters is not None:
             try:
-                filters = json.loads(filters)
+                decoded = decode_fiql_query(filters)
+                filters = transform_fiql_query(decoded.to_python())
+                #filters = json.loads(filters)
             except (ValueError, TypeError):
                 raise InvalidFilters("Parse error")
 
@@ -192,3 +197,56 @@ class QueryStringManager(object):
                                          .format(current_app.config['MAX_INCLUDE_DEPTH']))
 
         return include_param.split(',') if include_param else []
+
+
+def decode_fiql_query(query_str):
+    """
+            Decode a FIQL query
+            :param query_str:
+    """
+    try:
+        decoded = fiql_parser.parse_str_to_expression(query_str)
+        return decoded
+        #return self._sa_criteria_from_fiql_exp(decoded)
+    except fiql_parser.exceptions.FiqlException:
+        raise Exception('Invalid query')
+    except AttributeError as error:
+        raise Exception('Attribute {} is not valid for querying'.format(error))
+
+def transform_fiql_query(q):
+    this_op = q
+    last_op = []
+    newq = []
+
+    op_map = { '>': 'gt',
+           '<': 'lt',
+           '==': 'eq',
+           '<=': 'le',
+           '>=': 'ge',
+    }
+
+    def _procq(cur,l,operator=None, depth=0):
+        if depth>6:
+            raise Exception("Filter depth exceeded")
+        nl = None
+        if isinstance(cur,list) and isinstance(cur[0],str):
+            operator = cur.pop(0)
+            nl = []
+            nls = {operator: nl}
+            l.append(nls)
+        else:
+            nl = l
+        lists = []
+        for cond in cur:
+            if isinstance(cond,tuple):
+                d = {'name': cond[0], 'op': op_map.get(cond[1]), 'val': cond[2] }
+                nl.append(d)
+            elif isinstance(cond,list):
+                lists.append(cond)
+        if lists:
+            for lst in lists:
+                _procq(lst,nl,operator,depth+1)
+    if not isinstance(q,list):
+        q = [q]
+    _procq(q,newq,None,1)
+    return newq
