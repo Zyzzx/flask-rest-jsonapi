@@ -16,6 +16,7 @@ class QueryStringManager(object):
 
     MANAGED_KEYS = (
         'filter',
+        'xfilter',
         'page',
         'page_number',
         'page_size',
@@ -78,13 +79,16 @@ class QueryStringManager(object):
         :return list: filter information
         """
         filters = self.qs.get('filter')
-        if filters is not None:
-            try:
+        xfilter = self.qs.get('xfilter')
+        try:
+            if filters is not None:
                 decoded = decode_fiql_query(filters)
-                filters = transform_fiql_query(decoded.to_python())
+                filters = transform_fiql_query(decoded.to_python(),self.schema.Meta.type_)
                 #filters = json.loads(filters)
-            except (ValueError, TypeError):
-                raise InvalidFilters("Parse error")
+            elif xfilter is not None:
+                filters = json.loads(xfilter)
+        except (ValueError, TypeError) as e:
+            raise InvalidFilters("Parse error", str(e))
 
         return filters
 
@@ -108,6 +112,19 @@ class QueryStringManager(object):
             {'number': '25', 'size': '10'}
         """
         # check values type
+        result = {}
+        page_number = self.qs.get('page_number')
+        page_size = self.qs.get('page_size')
+        try:
+            if page_size is not None:
+                result['size'] = int(page_size)
+            if page_number is not None:
+                result['number'] = int(page_number)
+        except ValueError:
+            raise BadRequest("Parse error", source={'parameter': 'page_size/page_number'})
+        if result:
+            return result
+
         result = self._get_key_values('page')
         for key, value in result.items():
             if key not in ('number', 'size'):
@@ -213,7 +230,7 @@ def decode_fiql_query(query_str):
     except AttributeError as error:
         raise Exception('Attribute {} is not valid for querying'.format(error))
 
-def transform_fiql_query(q):
+def transform_fiql_query(q,type_):
     this_op = q
     last_op = []
     newq = []
@@ -230,7 +247,7 @@ def transform_fiql_query(q):
             raise Exception("Filter depth exceeded")
         nl = None
         if isinstance(cur,list) and isinstance(cur[0],str):
-            operator = cur.pop(0)
+            operator = cur.pop(0).lower()
             nl = []
             nls = {operator: nl}
             l.append(nls)
@@ -239,7 +256,19 @@ def transform_fiql_query(q):
         lists = []
         for cond in cur:
             if isinstance(cond,tuple):
-                d = {'name': cond[0], 'op': op_map.get(cond[1]), 'val': cond[2] }
+                names = cond[0].split('.')
+                if len(names) > 1 and names[0] == type_:
+                    names.pop(0)
+                op = 'eq'
+                if len(names) == 2:
+                    op = 'any'
+                    val  = { "name": names[1], "op" : op_map.get(cond[1]), "val" : cond[2]  }
+                    name = names[0]
+                elif len(names) == 1:
+                    val = cond[2]
+                    op = op_map.get(cond[1])
+                    name = names[0]
+                d = {'name': name, 'op': op, 'val': val }
                 nl.append(d)
             elif isinstance(cond,list):
                 lists.append(cond)
