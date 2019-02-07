@@ -369,8 +369,15 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
             for obj_ in json_data['data']:
                 if obj_['id'] in obj_ids:
-                    getattr(obj,
-                            relationship_field).remove(self.get_related_object(related_model, related_id_field, obj_))
+                    relobj = self.before_get_related_object(related_model, related_id_field, obj_, view_kwargs)
+
+                    if not relobj:
+                        relobj = self.get_related_object(related_model, related_id_field, obj_)
+
+                    getattr(obj,relationship_field).remove(relobj)
+
+                    self.after_get_related_object(related_model, related_id_field, obj_, view_kwargs)
+
                     updated = True
         else:
             setattr(obj, relationship_field, None)
@@ -394,6 +401,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param DeclarativeMeta obj: the sqlalchemy object to retrieve related objects from
         :return DeclarativeMeta: a related object
         """
+
         try:
             related_object = self.session.query(related_model)\
                                          .filter(getattr(related_model, related_id_field) == obj['id'])\
@@ -574,6 +582,21 @@ class SqlalchemyDataLayer(BaseDataLayer):
         pass
 
     def after_get_object(self, obj, view_kwargs):
+        """Make work after to retrieve an object
+
+        :param obj: an object from data layer
+        :param dict view_kwargs: kwargs from the resource view
+        """
+        pass
+
+    def before_get_related_object(self, related_model, related_id_field, data, view_kwargs):
+        """Make work before to retrieve an object
+
+        :param dict view_kwargs: kwargs from the resource view
+        """
+        pass
+
+    def after_get_related_object(self, related_model, related_id_field, data, view_kwargs):
         """Make work after to retrieve an object
 
         :param obj: an object from data layer

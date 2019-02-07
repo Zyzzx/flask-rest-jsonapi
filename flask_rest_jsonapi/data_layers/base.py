@@ -13,6 +13,8 @@ class BaseDataLayer(object):
                           'after_create_object',
                           'before_get_object',
                           'after_get_object',
+                          'before_get_related_object',
+                          'after_get_related_object',
                           'before_get_collection',
                           'after_get_collection',
                           'before_update_object',
@@ -165,6 +167,21 @@ class BaseDataLayer(object):
 
     def after_get_object(self, obj, view_kwargs):
         """Make work after to retrieve an object
+
+        :param obj: an object from data layer
+        :param dict view_kwargs: kwargs from the resource view
+        """
+        raise NotImplementedError
+
+    def before_get_related_object(self, related_model, related_id_field, data, view_kwargs):
+        """Make work before to retrieve a related object
+
+        :param dict view_kwargs: kwargs from the resource view
+        """
+        raise NotImplementedError
+
+    def after_get_related_object(self, related_model, related_id_field, data, view_kwargs):
+        """Make work after to retrieve a related object
 
         :param obj: an object from data layer
         :param dict view_kwargs: kwargs from the resource view

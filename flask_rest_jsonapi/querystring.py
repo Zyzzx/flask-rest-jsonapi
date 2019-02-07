@@ -224,7 +224,6 @@ def decode_fiql_query(query_str):
     try:
         decoded = fiql_parser.parse_str_to_expression(query_str)
         return decoded
-        #return self._sa_criteria_from_fiql_exp(decoded)
     except fiql_parser.exceptions.FiqlException:
         raise Exception('Invalid query')
     except AttributeError as error:
@@ -240,6 +239,7 @@ def transform_fiql_query(q,type_):
            '==': 'eq',
            '<=': 'le',
            '>=': 'ge',
+           '!=': 'ne'
     }
 
     def _procq(cur,l,operator=None, depth=0):

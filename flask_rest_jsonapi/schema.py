@@ -87,6 +87,7 @@ def get_model_field(schema, field):
     :param str field: the name of the schema field
     :return str: the name of the field in the model
     """
+
     if schema._declared_fields.get(field) is None:
         raise Exception("{} has no attribute {}".format(schema.__name__, field))
 
