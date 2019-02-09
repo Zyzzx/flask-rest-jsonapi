@@ -2,7 +2,7 @@
 
 """This module is a CRUD interface between resource managers and the sqlalchemy ORM"""
 
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.collections import InstrumentedList
 from sqlalchemy.inspection import inspect
@@ -408,6 +408,10 @@ class SqlalchemyDataLayer(BaseDataLayer):
                                          .one()
         except NoResultFound:
             raise RelatedObjectNotFound("{}.{}: {} not found".format(related_model.__name__,
+                                                                     related_id_field,
+                                                                     obj['id']))
+        except MultipleResultsFound:
+            raise RelationNotFound("{}.{}: multiple row returned for {}".format(related_model.__name__,
                                                                      related_id_field,
                                                                      obj['id']))
 
