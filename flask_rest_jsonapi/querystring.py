@@ -224,10 +224,10 @@ def decode_fiql_query(query_str):
     try:
         decoded = fiql_parser.parse_str_to_expression(query_str)
         return decoded
-    except fiql_parser.exceptions.FiqlException:
-        raise Exception('Invalid query')
+    except fiql_parser.exceptions.FiqlException as error:
+        raise InvalidFilters('Invalid query: {}'.format(error))
     except AttributeError as error:
-        raise Exception('Attribute {} is not valid for querying'.format(error))
+        raise InvalidField('Attribute {} is not valid for querying'.format(error))
 
 def transform_fiql_query(q,type_):
     this_op = q
