@@ -212,21 +212,27 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
             for obj_ in json_data['data']:
                 if obj_['id'] not in obj_ids:
-                    getattr(obj,
-                            relationship_field).append(self.get_related_object(related_model, related_id_field, obj_))
+                    relobj = self.before_get_related_object(related_model, related_id_field, obj_, view_kwargs)
+                    if not relobj:
+                        relobj = self.get_related_object(related_model, related_id_field, obj_)
+
+                    getattr(obj, relationship_field).append(relobj)
+                    self.after_get_related_object(related_model, related_id_field, obj_, view_kwargs)
                     updated = True
         else:
             related_object = None
 
             if json_data['data'] is not None:
-                related_object = self.get_related_object(related_model, related_id_field, json_data['data'])
+                related_object = self.before_get_related_object(related_model, related_id_field, obj_, view_kwargs)
+                if not related_object:
+                    related_object = self.get_related_object(related_model, related_id_field, json_data['data'])
 
             obj_id = getattr(getattr(obj, relationship_field), related_id_field, None)
             new_obj_id = getattr(related_object, related_id_field, None)
             if obj_id != new_obj_id:
                 setattr(obj, relationship_field, related_object)
                 updated = True
-
+            self.after_get_related_object(related_model, related_id_field, obj_, view_kwargs)
         try:
             self.session.commit()
         except IntegrityError as e:

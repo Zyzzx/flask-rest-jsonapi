@@ -3,6 +3,7 @@
 """Helper to deal with querystring parameters according to jsonapi specification"""
 
 import json
+import re
 
 from flask import current_app
 
@@ -10,6 +11,8 @@ from flask_rest_jsonapi.exceptions import BadRequest, InvalidFilters, InvalidSor
 from flask_rest_jsonapi.schema import get_model_field, get_relationships, get_schema_from_type
 
 import fiql_parser
+
+from urllib.parse import quote as uriquote
 
 class QueryStringManager(object):
     """Querystring parser according to jsonapi reference"""
@@ -84,7 +87,6 @@ class QueryStringManager(object):
             if filters is not None:
                 decoded = decode_fiql_query(filters)
                 filters = transform_fiql_query(decoded.to_python(),self.schema.Meta.type_)
-                #filters = json.loads(filters)
             elif xfilter is not None:
                 filters = json.loads(xfilter)
         except (ValueError, TypeError) as e:
@@ -185,9 +187,13 @@ class QueryStringManager(object):
 
         """
         if self.qs.get('sort'):
+            type_ = self.schema.Meta.type_
             sorting_results = []
             for sort_field in self.qs['sort'].split(','):
                 field = sort_field.replace('-', '')
+                if field.startswith(type_ + '.'):
+                    # Remove redundant type on the sort field if it is there
+                    field = re.sub('^' + type_ + r'\.','',field)
                 if field not in self.schema._declared_fields:
                     raise InvalidSort("{} has no attribute {}".format(self.schema.__name__, field))
                 if field in get_relationships(self.schema):
@@ -241,10 +247,9 @@ def transform_fiql_query(q,type_):
            '>=': 'ge',
            '!=': 'ne'
     }
-
     def _procq(cur,l,operator=None, depth=0):
         if depth>6:
-            raise Exception("Filter depth exceeded")
+            raise InvalidFilters("Filter depth exceeded")
         nl = None
         if isinstance(cur,list) and isinstance(cur[0],str):
             operator = cur.pop(0).lower()
@@ -257,6 +262,7 @@ def transform_fiql_query(q,type_):
         for cond in cur:
             if isinstance(cond,tuple):
                 names = cond[0].split('.')
+                name = None
                 if len(names) > 1 and names[0] == type_:
                     names.pop(0)
                 op = 'eq'
@@ -268,6 +274,8 @@ def transform_fiql_query(q,type_):
                     val = cond[2]
                     op = op_map.get(cond[1])
                     name = names[0]
+                if not name:
+                    raise InvalidFilters("query filter parameters not valid")
                 d = {'name': name, 'op': op, 'val': val }
                 nl.append(d)
             elif isinstance(cond,list):
