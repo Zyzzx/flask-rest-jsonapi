@@ -105,11 +105,13 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         query = self.query(view_kwargs)
 
-        if qs.filters:
-            query = self.filter_query(query, qs.filters, self.model)
+        qfilt = qs.filters
+        if qfilt:
+            query = self.filter_query(query, qfilt, self.model)
 
-        if qs.sorting:
-            query = self.sort_query(query, qs.sorting)
+        qsort = qs.sorting
+        if qsort:
+            query = self.sort_query(query, qsort)
 
         object_count = query.count()
 

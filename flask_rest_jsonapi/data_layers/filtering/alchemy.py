@@ -39,6 +39,7 @@ class Node(object):
         self.schema = schema
 
     def resolve(self):
+
         """Create filter for a particular node of the filter tree"""
         if 'or' not in self.filter_ and 'and' not in self.filter_ and 'not' not in self.filter_:
             value = self.value

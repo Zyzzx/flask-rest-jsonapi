@@ -241,11 +241,12 @@ def transform_fiql_query(q,type_):
     newq = []
 
     op_map = { '>': 'gt',
-           '<': 'lt',
-           '==': 'eq',
-           '<=': 'le',
-           '>=': 'ge',
-           '!=': 'ne'
+               '<': 'lt',
+               '==': 'eq',
+               '<=': 'le',
+               '>=': 'ge',
+               '!=': 'ne',
+               'like': 'like'
     }
     def _procq(cur,l,operator=None, depth=0):
         if depth>6:
@@ -261,18 +262,27 @@ def transform_fiql_query(q,type_):
         lists = []
         for cond in cur:
             if isinstance(cond,tuple):
-                names = cond[0].split('.')
+                _names,_cond,_val = cond
+                names = _names.split('.')
+                _names,_cond,_val = cond
                 name = None
                 if len(names) > 1 and names[0] == type_:
                     names.pop(0)
-                op = 'eq'
+                if _val.startswith('*'):
+                    raise InvalidFilters("partial substring matches not supported")
+                elif _val.endswith('*'):
+                    op = 'like'
+                    _cond = op
+                    _val = _val.replace('*','%')
+                else:
+                    op = 'eq'
                 if len(names) == 2:
                     op = 'any'
-                    val  = { "name": names[1], "op" : op_map.get(cond[1]), "val" : cond[2]  }
+                    val  = { "name": names[1], "op" : op_map.get(_cond), "val" : _val  }
                     name = names[0]
                 elif len(names) == 1:
-                    val = cond[2]
-                    op = op_map.get(cond[1])
+                    val = _val
+                    op = op_map.get(_cond)
                     name = names[0]
                 if not name:
                     raise InvalidFilters("query filter parameters not valid")
