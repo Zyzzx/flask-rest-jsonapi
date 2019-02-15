@@ -314,7 +314,10 @@ class SqlalchemyDataLayer(BaseDataLayer):
             related_objects = []
 
             for obj_ in json_data['data']:
-                related_objects.append(self.get_related_object(related_model, related_id_field, obj_))
+                relobj = self.before_get_related_object(related_model, related_id_field, obj_, view_kwargs)
+                if not relobj:
+                    relobj = self.get_related_object(related_model, related_id_field, obj_)
+                related_objects.append(relobj)
 
             obj_ids = {getattr(obj__, related_id_field) for obj__ in getattr(obj, relationship_field)}
             new_obj_ids = {getattr(related_object, related_id_field) for related_object in related_objects}
@@ -326,7 +329,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
             related_object = None
 
             if json_data['data'] is not None:
-                related_object = self.get_related_object(related_model, related_id_field, json_data['data'])
+                related_object = self.before_get_related_object(related_model, related_id_field, obj_, view_kwargs)
+                if not related_object:
+                    related_object = self.get_related_object(related_model, related_id_field, json_data['data'])
 
             obj_id = getattr(getattr(obj, relationship_field), related_id_field, None)
             new_obj_id = getattr(related_object, related_id_field, None)
@@ -433,7 +438,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :return boolean: True if relationship have changed else False
         """
         self.before_apply_relationships(data,obj)
-
+        
         relationships_to_apply = []
         relationship_fields = get_relationships(self.resource.schema, model_field=True)
         for key, value in data.items():

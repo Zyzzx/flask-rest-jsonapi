@@ -146,7 +146,9 @@ class ResourceList(with_metaclass(ResourceMeta, Resource)):
                              qs,
                              url_for(self.view, _external=True, **view_kwargs))
 
-        result.update({'meta': {'count': objects_count}})
+        if 'meta' not in result:
+            result['meta'] = {}
+        result['meta'].update({'count': objects_count})
 
         self.after_get(result)
 

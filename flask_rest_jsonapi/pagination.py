@@ -22,6 +22,7 @@ def add_pagination_links(data, object_count, querystring, base_url):
     all_qs_args = copy(querystring.querystring)
 
     links['self'] = base_url
+    meta = data.get('meta',{})
 
     # compute self link
     if all_qs_args:
@@ -49,8 +50,11 @@ def add_pagination_links(data, object_count, querystring, base_url):
             if current_page > 1:
                 all_qs_args.update({'page[number]': current_page - 1})
                 links['prev'] = '?'.join((base_url, urlencode(all_qs_args)))
+                meta.update({'prev_page':  current_page - 1 })
             if current_page < last_page:
                 all_qs_args.update({'page[number]': current_page + 1})
                 links['next'] = '?'.join((base_url, urlencode(all_qs_args)))
-
+                meta.update({'next_page':  current_page + 1 })
+        meta.update({'page_size': page_size, 'last_page': last_page })
     data['links'] = links
+    data['meta'] = meta
