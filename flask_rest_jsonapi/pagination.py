@@ -36,23 +36,23 @@ def add_pagination_links(data, object_count, querystring, base_url):
         if last_page > 1:
             links['first'] = links['last'] = base_url
 
-            all_qs_args.pop('page[number]', None)
+            all_qs_args.pop('page_number', None)
 
             # compute first link
             if all_qs_args:
                 links['first'] += '?' + urlencode(all_qs_args)
 
-            all_qs_args.update({'page[number]': last_page})
+            all_qs_args.update({'page_number': last_page})
             links['last'] += '?' + urlencode(all_qs_args)
 
             # compute previous and next link
             current_page = int(querystring.pagination.get('number', 0)) or 1
             if current_page > 1:
-                all_qs_args.update({'page[number]': current_page - 1})
+                all_qs_args.update({'page_number': current_page - 1})
                 links['prev'] = '?'.join((base_url, urlencode(all_qs_args)))
                 meta.update({'prev_page':  current_page - 1 })
             if current_page < last_page:
-                all_qs_args.update({'page[number]': current_page + 1})
+                all_qs_args.update({'page_number': current_page + 1})
                 links['next'] = '?'.join((base_url, urlencode(all_qs_args)))
                 meta.update({'next_page':  current_page + 1 })
         meta.update({'page_size': page_size, 'last_page': last_page })
