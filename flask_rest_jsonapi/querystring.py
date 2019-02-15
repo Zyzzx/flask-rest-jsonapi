@@ -277,7 +277,7 @@ def transform_fiql_query(q,type_):
                 else:
                     op = 'eq'
                 if len(names) == 2:
-                    op = 'any'
+                    op = 'has'
                     val  = { "name": names[1], "op" : op_map.get(_cond), "val" : _val  }
                     name = names[0]
                 elif len(names) == 1:

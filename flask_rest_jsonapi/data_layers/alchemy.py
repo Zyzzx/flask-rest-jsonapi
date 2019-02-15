@@ -438,7 +438,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :return boolean: True if relationship have changed else False
         """
         self.before_apply_relationships(data,obj)
-        
+
         relationships_to_apply = []
         relationship_fields = get_relationships(self.resource.schema, model_field=True)
         for key, value in data.items():
