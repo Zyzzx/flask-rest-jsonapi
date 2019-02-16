@@ -39,21 +39,24 @@ class Node(object):
         self.schema = schema
 
     def resolve(self):
-
+        new_op = None
         """Create filter for a particular node of the filter tree"""
         if 'or' not in self.filter_ and 'and' not in self.filter_ and 'not' not in self.filter_:
             value = self.value
 
             if isinstance(value, dict):
+                if self.schema._declared_fields[self.filter_.get('name')].many is True:
+                    new_op='any'
+                else:
+                    new_op='has'
                 value = Node(self.related_model, value, self.resource, self.related_schema).resolve()
-
             if '__' in self.filter_.get('name', ''):
                 value = {self.filter_['name'].split('__')[1]: value}
 
             if isinstance(value, dict):
-                return getattr(self.column, self.operator)(**value)
+                return getattr(self.column, new_op or self.operator)(**value)
             else:
-                return getattr(self.column, self.operator)(value)
+                return getattr(self.column, new_op or self.operator)(value)
 
         if 'or' in self.filter_:
             return or_(Node(self.model, filt, self.resource, self.schema).resolve() for filt in self.filter_['or'])
