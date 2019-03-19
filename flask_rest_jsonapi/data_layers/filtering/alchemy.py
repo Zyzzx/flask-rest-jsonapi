@@ -37,12 +37,15 @@ class Node(object):
         self.filter_ = filter_
         self.resource = resource
         self.schema = schema
+        self.filter_map = getattr(self.schema.Meta,'filter_map',{})
 
     def resolve(self):
         new_op = None
         """Create filter for a particular node of the filter tree"""
         if 'or' not in self.filter_ and 'and' not in self.filter_ and 'not' not in self.filter_:
             value = self.value
+            if isinstance(value,str):
+                value = value.lower()
 
             if isinstance(value, dict):
                 if self.schema._declared_fields[self.filter_.get('name')].many is True:
@@ -52,7 +55,6 @@ class Node(object):
                 value = Node(self.related_model, value, self.resource, self.related_schema).resolve()
             if '__' in self.filter_.get('name', ''):
                 value = {self.filter_['name'].split('__')[1]: value}
-
             if isinstance(value, dict):
                 return getattr(self.column, new_op or self.operator)(**value)
             else:
@@ -106,6 +108,7 @@ class Node(object):
         field = self.name
 
         model_field = get_model_field(self.schema, field)
+        model_field = self.filter_map.get(model_field,model_field)
 
         try:
             return getattr(self.model, model_field)

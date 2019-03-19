@@ -208,33 +208,34 @@ class SqlalchemyDataLayer(BaseDataLayer):
         related_model = getattr(obj.__class__, relationship_field).property.mapper.class_
 
         updated = False
+        if not isinstance(json_data['data'], list):
+            json_data['data'] = [json_data['data']]
 
-        if isinstance(json_data['data'], list):
-            obj_ids = {str(getattr(obj__, related_id_field)) for obj__ in getattr(obj, relationship_field)}
+        obj_ids = {str(getattr(obj__, related_id_field)) for obj__ in getattr(obj, relationship_field)}
 
-            for obj_ in json_data['data']:
-                if obj_['id'] not in obj_ids:
-                    relobj = self.before_get_related_object(related_model, related_id_field, obj_, view_kwargs)
-                    if not relobj:
-                        relobj = self.get_related_object(related_model, related_id_field, obj_)
+        for obj_ in json_data['data']:
+            if obj_['id'] not in obj_ids:
+                relobj = self.before_get_related_object(related_model, related_id_field, obj_, view_kwargs)
+                if not relobj:
+                    relobj = self.get_related_object(related_model, related_id_field, obj_)
 
-                    getattr(obj, relationship_field).append(relobj)
-                    self.after_get_related_object(related_model, related_id_field, obj_, view_kwargs)
-                    updated = True
-        else:
-            related_object = None
-
-            if json_data['data'] is not None:
-                related_object = self.before_get_related_object(related_model, related_id_field, obj_, view_kwargs)
-                if not related_object:
-                    related_object = self.get_related_object(related_model, related_id_field, json_data['data'])
-
-            obj_id = getattr(getattr(obj, relationship_field), related_id_field, None)
-            new_obj_id = getattr(related_object, related_id_field, None)
-            if obj_id != new_obj_id:
-                setattr(obj, relationship_field, related_object)
+                getattr(obj, relationship_field).append(relobj)
+                self.after_get_related_object(related_model, related_id_field, obj_, view_kwargs)
                 updated = True
-            self.after_get_related_object(related_model, related_id_field, obj_, view_kwargs)
+        # else:
+        #     related_object = None
+
+        #     if json_data['data'] is not None:
+        #         related_object = self.before_get_related_object(related_model, related_id_field, json_data['data'] , view_kwargs)
+        #         if not related_object:
+        #             related_object = self.get_related_object(related_model, related_id_field, json_data['data'])
+
+        #     obj_id = getattr(getattr(obj, relationship_field), related_id_field, None)
+        #     new_obj_id = getattr(related_object, related_id_field, None)
+        #     if obj_id != new_obj_id:
+        #         setattr(obj, relationship_field, related_object)
+        #         updated = True
+        #     self.after_get_related_object(related_model, related_id_field, obj_, view_kwargs)
         try:
             self.session.commit()
         except IntegrityError as e:
