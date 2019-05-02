@@ -109,11 +109,11 @@ class SqlalchemyDataLayer(BaseDataLayer):
         if qfilt:
             query = self.filter_query(query, qfilt, self.model)
 
+        object_count = query.count()
+
         qsort = qs.sorting
         if qsort:
             query = self.sort_query(query, qsort)
-
-        object_count = query.count()
 
         if getattr(self, 'eagerload_includes', True):
             query = self.eagerload_includes(query, qs)
