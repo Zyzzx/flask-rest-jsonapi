@@ -106,7 +106,7 @@ def get_relationships(schema, model_field=False):
 
     if model_field is True:
         relationships = [get_model_field(schema, key) for key in relationships]
-
+    
     return relationships
 
 

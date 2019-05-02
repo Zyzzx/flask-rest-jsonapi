@@ -39,6 +39,7 @@ class QueryStringManager(object):
 
         self.qs = querystring
         self.schema = schema
+        self.filter_map = getattr(self.schema.Meta,'filter_map',{})
 
     def _get_key_values(self, name):
         """Return a dict containing key / values items for a given key, used for items like filters, page, etc.
@@ -199,6 +200,7 @@ class QueryStringManager(object):
                 if field in get_relationships(self.schema):
                     raise InvalidSort("You can't sort on {} because it is a relationship field".format(field))
                 field = get_model_field(self.schema, field)
+                field = self.filter_map.get(field,field)
                 order = 'desc' if sort_field.startswith('-') else 'asc'
                 sorting_results.append({'field': field, 'order': order})
             return sorting_results

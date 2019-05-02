@@ -385,7 +385,7 @@ class ResourceRelationship(with_metaclass(ResourceMeta, Resource)):
     def post(self, *args, **kwargs):
         """Add / create relationship(s)"""
         json_data = request.get_json() or {}
-
+        
         relationship_field, model_relationship_field, related_type_, related_id_field = self._get_relationship_data()
 
         if 'data' not in json_data:
