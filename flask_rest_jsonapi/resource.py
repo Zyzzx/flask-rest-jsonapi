@@ -129,8 +129,8 @@ class ResourceList(with_metaclass(ResourceMeta, Resource)):
         qs = QSManager(request.args, self.schema)
 
         objects_count, objects = self.get_collection(qs, kwargs)
-
         schema_kwargs = getattr(self, 'get_schema_kwargs', dict())
+
         schema_kwargs.update({'many': True})
 
         schema = compute_schema(self.schema,
@@ -141,6 +141,7 @@ class ResourceList(with_metaclass(ResourceMeta, Resource)):
         result = schema.dump(objects).data
 
         view_kwargs = request.view_args if getattr(self, 'view_kwargs', None) is True else dict()
+
         add_pagination_links(result,
                              objects_count,
                              qs,

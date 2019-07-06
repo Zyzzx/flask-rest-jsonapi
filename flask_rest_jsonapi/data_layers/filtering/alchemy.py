@@ -3,7 +3,7 @@
 """Helper to create sqlalchemy filters according to filter querystring parameter"""
 
 from sqlalchemy import and_, or_, not_
-
+import json
 from flask_rest_jsonapi.exceptions import InvalidFilters
 from flask_rest_jsonapi.schema import get_relationships, get_model_field
 
@@ -38,21 +38,40 @@ class Node(object):
         self.resource = resource
         self.schema = schema
         self.filter_map = getattr(self.schema.Meta,'filter_map',{})
+        self.rel_filter_map = getattr(self.schema.Meta,'rel_filter_map',{})
 
     def resolve(self):
         new_op = None
+
+        print("Resolving", self.schema, self.model, self.filter_)
         """Create filter for a particular node of the filter tree"""
         if 'or' not in self.filter_ and 'and' not in self.filter_ and 'not' not in self.filter_:
             value = self.value
+            print("COLUMN/VALUE:", self.column, value)
+
             if isinstance(value,str):
                 value = value.lower()
-
             if isinstance(value, dict):
-                if self.schema._declared_fields[self.filter_.get('name')].many is True:
-                    new_op='any'
+                filter_name = self.filter_.get('name')
+
+                if filter_name in self.rel_filter_map:
+                    #return getattr(self.column,self.operator)
+                    col = self.column
+                    print("JSONB QUERY:", value,self.model,col)
+                    print(dir(col))
+                    #value = (col[self.rel_filter_map[filter_name]['fields']['id']].astext == value['val'])
+                    #value = (col.contains == json.dumps({self.rel_filter_map[filter_name]['fields']['id']: value['val']}))
+                    value = col.comparator.contains(json.dumps([{self.rel_filter_map[filter_name]['fields']['id']: value['val']}]))
+                    new_op = 'eq'
+                    return value
+                    #return getattr(self.column, new_op or self.operator)(value)
                 else:
-                    new_op='has'
-                value = Node(self.related_model, value, self.resource, self.related_schema).resolve()
+                    if self.schema._declared_fields[self.filter_.get('name')].many is True:
+                        new_op='any'
+                    else:
+                        new_op='has'
+                    print("For Related Schema", self.related_model, self.related_schema, value)
+                    value = Node(self.related_model, value, self.resource, self.related_schema).resolve()
             if '__' in self.filter_.get('name', ''):
                 value = {self.filter_['name'].split('__')[1]: value}
             if isinstance(value, dict):
@@ -108,7 +127,11 @@ class Node(object):
         field = self.name
 
         model_field = get_model_field(self.schema, field)
-        model_field = self.filter_map.get(model_field,model_field)
+        filter_field = self.filter_map.get(model_field,None)
+        if not filter_field:
+            model_field = self.rel_filter_map.get(model_field,{}).get('name',model_field)
+        else:
+            model_field = filter_field
 
         try:
             return getattr(self.model, model_field)
