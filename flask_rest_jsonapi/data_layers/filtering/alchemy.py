@@ -39,6 +39,7 @@ class Node(object):
         self.schema = schema
         self.filter_map = getattr(self.schema.Meta,'filter_map',{})
         self.rel_filter_map = getattr(self.schema.Meta,'rel_filter_map',{})
+        #self.rel_filter_map = getattr(self.model,'__x_rel_filter__',{})
 
     def resolve(self):
         new_op = None

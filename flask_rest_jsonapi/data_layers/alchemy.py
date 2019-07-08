@@ -6,7 +6,7 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.collections import InstrumentedList
 from sqlalchemy.inspection import inspect
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, subqueryload, selectinload, lazyload
 from marshmallow import class_registry
 from marshmallow.base import SchemaABC
 
@@ -120,6 +120,13 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         query = self.paginate_query(query, qs.pagination)
 
+        # change eager loading optons
+        if getattr(self.resource.schema.Meta,'rel_filter_map',{}):
+            _opts = []
+            for r,v in self.resource.schema.Meta.rel_filter_map.items():
+                _opts.append(subqueryload(r))
+            query = query.options(*_opts)
+            #print("NEW QUERY OPTIONS")
         collection = query.all()
 
         collection = self.after_get_collection(collection, qs, view_kwargs)
