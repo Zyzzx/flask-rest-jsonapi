@@ -43,11 +43,11 @@ class Node(object):
     def resolve(self):
         new_op = None
 
-        print("Resolving", self.schema, self.model, self.filter_)
+        #print("Resolving", self.schema, self.model, self.filter_)
         """Create filter for a particular node of the filter tree"""
         if 'or' not in self.filter_ and 'and' not in self.filter_ and 'not' not in self.filter_:
             value = self.value
-            print("COLUMN/VALUE:", self.column, value)
+            #print("COLUMN/VALUE:", self.column, value)
 
             if isinstance(value,str):
                 value = value.lower()
@@ -57,12 +57,13 @@ class Node(object):
                 if filter_name in self.rel_filter_map:
                     #return getattr(self.column,self.operator)
                     col = self.column
-                    print("JSONB QUERY:", value,self.model,col)
-                    print(dir(col))
+                    #print("JSONB QUERY:", value,self.model,col)
+                    #print(dir(col))
                     #value = (col[self.rel_filter_map[filter_name]['fields']['id']].astext == value['val'])
                     #value = (col.contains == json.dumps({self.rel_filter_map[filter_name]['fields']['id']: value['val']}))
-                    value = col.comparator.contains(json.dumps([{self.rel_filter_map[filter_name]['fields']['id']: value['val']}]))
-                    new_op = 'eq'
+                    #value = col.comparator.contains(json.dumps([{self.rel_filter_map[filter_name]['fields']['id']: value['val']}]))
+                    value = (col.has_key(value['val']))
+                    #new_op = 'eq'
                     return value
                     #return getattr(self.column, new_op or self.operator)(value)
                 else:
@@ -70,7 +71,7 @@ class Node(object):
                         new_op='any'
                     else:
                         new_op='has'
-                    print("For Related Schema", self.related_model, self.related_schema, value)
+                    #print("For Related Schema", self.related_model, self.related_schema, value)
                     value = Node(self.related_model, value, self.resource, self.related_schema).resolve()
             if '__' in self.filter_.get('name', ''):
                 value = {self.filter_['name'].split('__')[1]: value}
