@@ -51,11 +51,12 @@ class Node(object):
             #print("COLUMN/VALUE:", self.column, value)
 
             if isinstance(value,str):
+                #print("IS STRING?")
                 value = value.lower()
-            if isinstance(value, dict):
+            elif isinstance(value, dict):
                 filter_name = self.filter_.get('name')
-
-                if filter_name in self.rel_filter_map:
+                #print("IS DICT", filter_name)
+                if filter_name in self.rel_filter_map and self.rel_filter_map[filter_name]:
                     #return getattr(self.column,self.operator)
                     col = self.column
                     #print("JSONB QUERY:", value,self.model,col)
