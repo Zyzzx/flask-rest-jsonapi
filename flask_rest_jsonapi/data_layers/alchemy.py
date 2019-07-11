@@ -124,8 +124,13 @@ class SqlalchemyDataLayer(BaseDataLayer):
         if getattr(self.resource.schema.Meta,'rel_filter_map',{}):
             _opts = []
             for r,v in self.resource.schema.Meta.rel_filter_map.items():
-                _opts.append(subqueryload(r))
-            query = query.options(*_opts)
+                if not v.get('join',False):
+                    _opts.append(lazyload(r))
+                else:
+                    _opts.append(subqueryload(r))
+                    # print("****JOINING")
+            if _opts:
+                query = query.options(*_opts)
             #print("NEW QUERY OPTIONS")
         collection = query.all()
 

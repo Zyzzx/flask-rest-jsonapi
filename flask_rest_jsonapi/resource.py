@@ -138,14 +138,17 @@ class ResourceList(with_metaclass(ResourceMeta, Resource)):
                                 qs,
                                 qs.include)
 
-        result = schema.dump(objects).data
-
+        #print("RV:", request.view_args, getattr(self, 'view_kwargs', None) )
         view_kwargs = request.view_args if getattr(self, 'view_kwargs', None) is True else dict()
 
+        result = schema.dump(objects).data
+
+        theurl = url_for(self.view, _external=True, **view_kwargs)
+        #print("VIEW:", theurl, view_kwargs)
         add_pagination_links(result,
                              objects_count,
                              qs,
-                             url_for(self.view, _external=True, **view_kwargs))
+                             theurl)
 
         if 'meta' not in result:
             result['meta'] = {}
