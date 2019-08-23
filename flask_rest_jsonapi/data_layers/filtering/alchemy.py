@@ -39,6 +39,7 @@ class Node(object):
         self.schema = schema
         self.filter_map = getattr(self.schema.Meta,'filter_map',{})
         self.rel_filter_map = getattr(self.schema.Meta,'rel_filter_map',{})
+        self.jsonb_filter_map =  getattr(self.schema.Meta,'jsonb_filter_map',{"x":1})
         #self.rel_filter_map = getattr(self.model,'__x_rel_filter__',{})
 
     def resolve(self):
@@ -48,11 +49,24 @@ class Node(object):
         """Create filter for a particular node of the filter tree"""
         if 'or' not in self.filter_ and 'and' not in self.filter_ and 'not' not in self.filter_:
             value = self.value
-            #print("COLUMN/VALUE:", self.column, value)
+            #print("COLUMN/VALUE:", self.column, self.column.type,value)
 
             if isinstance(value,str):
-                #print("IS STRING?")
-                value = value.lower()
+                jfm = self.jsonb_filter_map.get(self.filter_.get('name'),None)
+                #print("IS STRING?",jfm)
+
+                if jfm and str(self.column.type) == jfm.get('type'):
+                    #print("IS JSON", jfm)
+                    cond = jfm.get('cond')
+                    if cond:
+                        condv = cond(self.value)
+                        #print("HAVE COND",condv)
+                        value = (self.column.comparator.contains(cond(self.value)))
+                    else:
+                        value = self.column.has_key(value)
+                    return value
+                else:
+                    value = value.lower()
             elif isinstance(value, dict):
                 filter_name = self.filter_.get('name')
                 #print("IS DICT", filter_name)
