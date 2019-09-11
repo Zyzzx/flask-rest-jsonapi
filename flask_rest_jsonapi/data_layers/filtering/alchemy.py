@@ -59,7 +59,7 @@ class Node(object):
                     #print("IS JSON", jfm)
                     cond = jfm.get('cond')
                     if cond:
-                        condv = cond(self.value)
+                        #condv = cond(self.value)
                         #print("HAVE COND",condv)
                         value = (self.column.comparator.contains(cond(self.value)))
                     else:
