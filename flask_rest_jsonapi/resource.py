@@ -146,7 +146,7 @@ class ResourceList(with_metaclass(ResourceMeta, Resource)):
         theurl = url_for(self.view, _external=True, **view_kwargs)
         #print("VIEW:", theurl, view_kwargs)
         add_pagination_links(result,
-                             objects_count,
+                             objects_count or len(objects),
                              qs,
                              theurl)
 

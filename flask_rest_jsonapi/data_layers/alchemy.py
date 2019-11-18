@@ -109,7 +109,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         if qfilt:
             query = self.filter_query(query, qfilt, self.model)
 
-        object_count = query.count()
+        object_count = 0 #query.count()
 
         qsort = qs.sorting
         if qsort:
@@ -521,7 +521,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
             return query
 
         page_size = int(paginate_info.get('size', 0)) or current_app.config['PAGE_SIZE']
-        query = query.limit(page_size)
+        # Select one more than is desired to verify if there are more.
+        query = query.limit(page_size + 1)
         if paginate_info.get('number'):
             query = query.offset((int(paginate_info['number']) - 1) * page_size)
 

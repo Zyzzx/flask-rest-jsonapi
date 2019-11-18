@@ -31,11 +31,11 @@ def add_pagination_links(data, object_count, querystring, base_url):
     if querystring.pagination.get('size') != '0' and object_count > 1:
         # compute last link
         page_size = int(querystring.pagination.get('size', 0)) or current_app.config['PAGE_SIZE']
-        last_page = int(ceil(object_count / page_size))
+        last_page = 0 # int(ceil(object_count / page_size))
 
         if last_page > 1:
             links['first'] = links['last'] = base_url
-
+            
             all_qs_args.pop('page_number', None)
 
             # compute first link
@@ -52,6 +52,23 @@ def add_pagination_links(data, object_count, querystring, base_url):
                 links['prev'] = '?'.join((base_url, urlencode(all_qs_args)))
                 meta.update({'prev_page':  current_page - 1 })
             if current_page < last_page:
+                all_qs_args.update({'page_number': current_page + 1})
+                links['next'] = '?'.join((base_url, urlencode(all_qs_args)))
+                meta.update({'next_page':  current_page + 1 })
+        else:
+            # Not gettings counts from server. Creating next and prev links.
+            links['first'] = base_url
+            all_qs_args.pop('page_number', None)
+            if all_qs_args:
+                links['first'] += '?' + urlencode(all_qs_args)
+
+            current_page = int(querystring.pagination.get('number', 0)) or 1
+
+            if current_page > 1:
+                all_qs_args.update({'page_number': current_page - 1})
+                links['prev'] = '?'.join((base_url, urlencode(all_qs_args)))
+                meta.update({'prev_page':  current_page - 1 })
+            if object_count > page_size:
                 all_qs_args.update({'page_number': current_page + 1})
                 links['next'] = '?'.join((base_url, urlencode(all_qs_args)))
                 meta.update({'next_page':  current_page + 1 })
